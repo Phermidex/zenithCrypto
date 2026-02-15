@@ -1,17 +1,13 @@
-export type CryptoAsset = {
-  id: string;
-  name: string;
-  symbol: string;
-};
+import type { CryptocurrencyType } from './firebase-types';
 
 export type WalletAsset = {
-  asset: CryptoAsset;
+  asset: CryptocurrencyType;
   balance: number;
   balanceUSD: number;
 };
 
 export type MarketData = {
-  asset: CryptoAsset;
+  asset: CryptocurrencyType;
   price: number;
   change24h: number;
   marketCap: number;
