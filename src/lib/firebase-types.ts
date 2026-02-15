@@ -45,15 +45,18 @@ export interface Transaction {
   id: string;
   userId: string;
   cryptocurrencyTypeId: string;
-  creditCardId: string;
-  type: string;
+  creditCardId?: string;
+  type: 'buy' | 'send';
   cryptoAmount: number;
   fiatAmount: number;
   fiatCurrency: string;
   status: string;
+  recipientEmail?: string;
   transactionFee?: number;
   transactionDate: string;
   externalTransactionId?: string;
   createdAt: string;
   updatedAt: string;
 }
+
+    

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleDollarSign, CreditCard, LayoutDashboard, Zap } from "lucide-react";
+import { CircleDollarSign, CreditCard, LayoutDashboard, Send, Zap } from "lucide-react";
 import {
   SidebarHeader,
   SidebarMenu,
@@ -14,6 +14,7 @@ import {
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/buy", icon: CircleDollarSign, label: "Buy Crypto" },
+  { href: "/send", icon: Send, label: "Send" },
   { href: "/payment", icon: CreditCard, label: "Payment" },
 ];
 
@@ -53,3 +54,5 @@ export default function AppSidebarContent() {
     </>
   );
 }
+
+    
