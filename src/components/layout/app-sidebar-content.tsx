@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CircleDollarSign, CreditCard, LayoutDashboard, Send, Zap } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { CircleDollarSign, CreditCard, LayoutDashboard, LogOut, Send, Zap } from "lucide-react";
 import {
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -10,6 +11,8 @@ import {
   SidebarContent,
   useSidebar
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -21,6 +24,15 @@ const navItems = [
 export default function AppSidebarContent() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
+    router.push('/login');
+  };
 
   return (
     <>
@@ -51,8 +63,19 @@ export default function AppSidebarContent() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarFooter className="p-4 mt-auto">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              tooltip={{ children: "Log Out", className: "bg-background text-foreground border-border" }}
+            >
+              <LogOut />
+              <span>Log Out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </>
   );
 }
-
-    

@@ -1,45 +1,37 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuth, useUser, useFirestore } from '@/firebase';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { doc } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/firebase-types';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useUser } from '@/firebase';
+import { redirect, usePathname } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
- * This component ensures that a user is always authenticated.
- * If no user is logged in, it initiates an anonymous sign-in process.
- * It also ensures a user profile document exists in Firestore for the signed-in user.
+ * This component ensures that a user is authenticated before accessing
+ * protected routes. It will redirect to the login page if the user is not
+ * authenticated. It's meant to be used inside protected layouts.
  */
 export default function EnsureAuth() {
   const { user, isUserLoading } = useUser();
-  const auth = useAuth();
-  const firestore = useFirestore();
-
+  const pathname = usePathname();
+  
   useEffect(() => {
-    if (auth && !isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
+    if (!isUserLoading && !user) {
+      redirect(`/login?redirect=${pathname}`);
     }
-  }, [user, isUserLoading, auth]);
+  }, [user, isUserLoading, pathname]);
 
-  useEffect(() => {
-    if (user && firestore) {
-        // When a user (anonymous or otherwise) signs in, check if their profile exists.
-        // If not, create one. This is an idempotent operation.
-        const userProfileRef = doc(firestore, 'users', user.uid);
-        
-        const userProfileData: Partial<UserProfile> = {
-            id: user.uid,
-            email: user.email || `${user.uid}@anon.zenith.com`,
-            createdAt: user.metadata.creationTime || new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
+  // While loading, show a skeleton loader to avoid layout shifts.
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex flex-col h-screen w-full items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+            </div>
+        </div>
+    );
+  }
 
-        // This will create the document if it doesn't exist, or merge the fields if it does.
-        setDocumentNonBlocking(userProfileRef, userProfileData, { merge: true });
-    }
-  }, [user, firestore]);
-
-  return null; // This component does not render anything.
+  return null; // This component doesn't render anything itself, it just guards
 }
