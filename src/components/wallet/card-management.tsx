@@ -112,7 +112,7 @@ export default function CardManagement() {
                              <FormField control={form.control} name="cardNumber" render={({ field }) => (
                                 <FormItem><FormLabel>Card Number</FormLabel><FormControl><Input placeholder="•••• •••• •••• ••••" {...field} /></FormControl><FormMessage /></FormItem>
                              )} />
-                             <div className="flex gap-4">
+                             <div className="flex flex-col sm:flex-row gap-4">
                                 <FormField control={form.control} name="expiry" render={({ field }) => (
                                     <FormItem className="flex-1"><FormLabel>Expiry Date</FormLabel><FormControl><Input placeholder="MM/YY" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />

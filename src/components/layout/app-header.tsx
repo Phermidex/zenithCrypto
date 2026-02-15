@@ -10,7 +10,7 @@ export default function AppHeader({ title }: { title: string }) {
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b border-border/20 px-4 md:px-8">
       <div className="flex items-center gap-4">
-        <SidebarTrigger className="md:hidden"/>
+        <SidebarTrigger />
         <h1 className="text-xl md:text-2xl font-bold text-foreground">{title}</h1>
       </div>
       <div className="flex items-center gap-4">
