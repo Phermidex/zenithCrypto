@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { collection, doc } from "firebase/firestore";
 import type { CreditCard as CreditCardType } from "@/lib/firebase-types";
 
@@ -75,7 +75,10 @@ export default function CardManagement() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const expiryParts = values.expiry.split(/\s?\/\s?/);
-    const newCardData: Omit<CreditCardType, 'id'> = {
+    const newCardRef = doc(collection(firestore, 'users', user.uid, 'creditCards'));
+    
+    const newCardData: CreditCardType = {
+        id: newCardRef.id,
         userId: user.uid,
         stripePaymentMethodId: `pm_${Math.random().toString(36).substr(2, 9)}`, // Mock Stripe ID
         brand: getCardBrand(values.cardNumber),
@@ -87,8 +90,6 @@ export default function CardManagement() {
         updatedAt: new Date().toISOString(),
     };
 
-    const cardsCollectionRef = collection(firestore, 'users', user.uid, 'creditCards');
-
     if (values.isDefault && cards) {
       cards.forEach(c => {
         if (c.isDefault) {
@@ -98,7 +99,7 @@ export default function CardManagement() {
       });
     }
 
-    addDocumentNonBlocking(cardsCollectionRef, newCardData);
+    setDocumentNonBlocking(newCardRef, newCardData, {});
 
     setIsSubmitting(false);
     setOpen(false);
