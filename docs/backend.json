@@ -1,0 +1,381 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information within the Zenith Crypto Wallet app. Assumes external authentication is handled separately.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, used for contact and identification.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "createdAt"
+      ]
+    },
+    "CreditCard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CreditCard",
+      "type": "object",
+      "description": "Represents a credit card securely stored for a user, integrated with an external payment gateway like Stripe, for purchasing cryptocurrencies.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CreditCard entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile this credit card belongs to. (Relationship: UserProfile 1:N CreditCard)"
+        },
+        "stripePaymentMethodId": {
+          "type": "string",
+          "description": "The identifier for the payment method in Stripe, used to securely process transactions. Raw card details are NOT stored."
+        },
+        "brand": {
+          "type": "string",
+          "description": "The brand of the credit card (e.g., 'Visa', 'Mastercard')."
+        },
+        "lastFourDigits": {
+          "type": "string",
+          "description": "The last four digits of the credit card number, for display purposes only."
+        },
+        "expiryMonth": {
+          "type": "number",
+          "description": "The expiry month of the credit card (1-12)."
+        },
+        "expiryYear": {
+          "type": "number",
+          "description": "The expiry year of the credit card."
+        },
+        "isDefault": {
+          "type": "boolean",
+          "description": "Indicates if this is the user's default credit card for crypto purchases."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the credit card was added to the user's profile.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the credit card details were last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "stripePaymentMethodId",
+        "brand",
+        "lastFourDigits",
+        "expiryMonth",
+        "expiryYear",
+        "createdAt"
+      ]
+    },
+    "CryptocurrencyType": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CryptocurrencyType",
+      "type": "object",
+      "description": "Defines the characteristics of a supported cryptocurrency (e.g., Bitcoin, Ethereum) available in the wallet app.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CryptocurrencyType entity (e.g., 'bitcoin', 'ethereum')."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the cryptocurrency (e.g., 'Bitcoin')."
+        },
+        "symbol": {
+          "type": "string",
+          "description": "The ticker symbol of the cryptocurrency (e.g., 'BTC')."
+        },
+        "iconUrl": {
+          "type": "string",
+          "description": "URL to an icon image for the cryptocurrency, for UI display.",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief descriptive text about the cryptocurrency."
+        },
+        "isEnabled": {
+          "type": "boolean",
+          "description": "Indicates if this cryptocurrency is currently enabled for trading and display in the app."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when this cryptocurrency type was first added to the system.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the cryptocurrency type details were last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "symbol",
+        "isEnabled",
+        "createdAt"
+      ]
+    },
+    "UserWallet": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserWallet",
+      "type": "object",
+      "description": "Represents a user's current holdings and balance for a specific cryptocurrency.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserWallet entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who owns this wallet balance. (Relationship: UserProfile 1:N UserWallet)"
+        },
+        "cryptocurrencyTypeId": {
+          "type": "string",
+          "description": "Reference to the CryptocurrencyType for which this balance is held. (Relationship: CryptocurrencyType 1:N UserWallet)"
+        },
+        "balance": {
+          "type": "number",
+          "description": "The current amount of the cryptocurrency held by the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when this wallet entry was first created for the user.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the wallet balance was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "cryptocurrencyTypeId",
+        "balance",
+        "createdAt"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Records details of cryptocurrency purchase transactions made by a user using a credit card.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transaction entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who initiated the transaction. (Relationship: UserProfile 1:N Transaction)"
+        },
+        "cryptocurrencyTypeId": {
+          "type": "string",
+          "description": "Reference to the CryptocurrencyType involved in this transaction (e.g., Bitcoin purchased). (Relationship: CryptocurrencyType 1:N Transaction)"
+        },
+        "creditCardId": {
+          "type": "string",
+          "description": "Reference to the CreditCard used for this purchase transaction. (Relationship: CreditCard 1:N Transaction)"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of transaction (e.g., 'buy' for cryptocurrency purchases).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cryptoAmount": {
+          "type": "number",
+          "description": "The amount of cryptocurrency involved in the transaction."
+        },
+        "fiatAmount": {
+          "type": "number",
+          "description": "The amount of fiat currency (e.g., USD) spent or received in the transaction."
+        },
+        "fiatCurrency": {
+          "type": "string",
+          "description": "The fiat currency used for the transaction (e.g., 'USD', 'EUR')."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the transaction (e.g., 'pending', 'completed', 'failed', 'cancelled')."
+        },
+        "transactionFee": {
+          "type": "number",
+          "description": "Any fees incurred during the transaction, in fiat currency."
+        },
+        "transactionDate": {
+          "type": "string",
+          "description": "The date and time when the transaction occurred or was initiated.",
+          "format": "date-time"
+        },
+        "externalTransactionId": {
+          "type": "string",
+          "description": "Identifier for the transaction in an external payment system (e.g., Stripe's charge ID) for reconciliation."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the transaction record was created in the system.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the transaction record was last updated (e.g., status change).",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "cryptocurrencyTypeId",
+        "creditCardId",
+        "type",
+        "cryptoAmount",
+        "fiatAmount",
+        "fiatCurrency",
+        "status",
+        "transactionDate",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores personal profile information for authenticated users. The document ID (`userId`) MUST match `request.auth.uid`. Accessible only by the owning user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/creditCards/{creditCardId}",
+        "definition": {
+          "entityName": "CreditCard",
+          "schema": {
+            "$ref": "#/backend/entities/CreditCard"
+          },
+          "description": "Stores secure credit card payment method references (Stripe IDs) for a user. Each document includes a denormalized 'userId' field matching the path, enabling authorization independence. Accessible only by the owning user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to `request.auth.uid`."
+            },
+            {
+              "name": "creditCardId",
+              "description": "The unique identifier for a specific credit card."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/cryptocurrencyTypes/{cryptocurrencyTypeId}",
+        "definition": {
+          "entityName": "CryptocurrencyType",
+          "schema": {
+            "$ref": "#/backend/entities/CryptocurrencyType"
+          },
+          "description": "Defines globally supported cryptocurrencies. This collection is public for reading (e.g., for market data display and selection) but write-restricted to administrators. All documents share a homogeneous security posture.",
+          "params": [
+            {
+              "name": "cryptocurrencyTypeId",
+              "description": "The unique identifier for a specific cryptocurrency type (e.g., 'bitcoin')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/wallets/{cryptocurrencyTypeId}",
+        "definition": {
+          "entityName": "UserWallet",
+          "schema": {
+            "$ref": "#/backend/entities/UserWallet"
+          },
+          "description": "Stores a user's current balance for a specific cryptocurrency. The document ID is the 'cryptocurrencyTypeId' for direct lookup. Each document includes a denormalized 'userId' field matching the path, enabling authorization independence. Accessible only by the owning user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to `request.auth.uid`."
+            },
+            {
+              "name": "cryptocurrencyTypeId",
+              "description": "The unique identifier of the cryptocurrency type, also used as the document ID for the wallet."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Records individual cryptocurrency purchase transactions for a user. Each document includes a denormalized 'userId' field matching the path, enabling authorization independence. Accessible only by the owning user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to `request.auth.uid`."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for a specific transaction."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The proposed Firestore structure prioritizes secure, scalable, and debuggable authorization by adhering to the core design principles, especially Authorization Independence and Structural Segregation.\n\n**Authorization Independence via Denormalization (Strategy A):**\nFor all user-specific data (UserProfile, CreditCard, UserWallet, Transaction), documents are nested under `/users/{userId}/...`. Crucially, each of these documents will include the `userId` field (e.g., `creditCard.userId`, `userWallet.userId`, `transaction.userId`) which matches the `{userId}` wildcard in their respective paths. This denormalization means that security rules can verify ownership by simply comparing `request.auth.uid` with `resource.data.userId` and the path parameter `{userId}`. This eliminates the need for expensive and complex `get()` calls to parent documents in security rules, making rules atomic, simpler, and less prone to errors during batch writes or transactions. For example, a credit card document will contain `userId: 'user123'`, and its path will be `/users/user123/creditCards/card456`. Rules can then simply check `request.auth.uid == resource.data.userId && request.auth.uid == userId` where `userId` is the path wildcard.\n\n**Querying for Authorization & QAPs (Rules are not Filters):**\n\n1.  **Private User Data (`/users/{userId}`, `/users/{userId}/creditCards`, `/users/{userId}/wallets`, `/users/{userId}/transactions`):** The path-based ownership model ensures that `list` queries on these subcollections are inherently scoped to the authenticated user. For example, a query to `/users/{request.auth.uid}/creditCards` will only return the current user's credit cards. Security rules will simply enforce that `request.auth.uid == userId` (the path wildcard) for read/write operations, effectively allowing full collection-level reads for the authenticated user on their own data without acting as filters. This satisfies QAPs by ensuring that the database does not return data the user isn't authorized to see in the first place.\n\n2.  **Global Data (`/cryptocurrencyTypes`):** This collection is designed for global, read-only access by all authenticated users, and is managed by administrators. Its top-level nature and homogeneous security posture simplify rules, allowing easy `list` operations for all clients (e.g., to populate market data or selection dropdowns) while protecting write access. This adheres to Structural Segregation (Strategy B) by separating public/global data from private user data.\n\n**Overall Design:**\n*   **User Profiles (`/users/{userId}`):** Serves as the root for all user-specific data, leveraging `request.auth.uid` for direct access and strict ownership.\n*   **Credit Cards (`/users/{userId}/creditCards/{creditCardId}`):** Nested under the user, includes `userId` for self-contained authorization checks.\n*   **Cryptocurrency Types (`/cryptocurrencyTypes/{cryptocurrencyTypeId}`):** A top-level collection for public, global cryptocurrency definitions, ensuring all users can read available crypto types for market data and selections.\n*   **User Wallets (`/users/{userId}/wallets/{cryptocurrencyTypeId}`):** Nested under the user, with the document ID being the `cryptocurrencyTypeId` for efficient per-crypto wallet lookup. Includes `userId` for authorization.\n*   **Transactions (`/users/{userId}/transactions/{transactionId}`):** Nested under the user, includes `userId` for clear transaction ownership and authorization.\n\nThis structure directly supports the dashboard functionality by providing clear, predictable paths to retrieve all necessary user-specific information (profile, cards, wallets, transactions) and global market data. It aligns with DBAC by using `request.auth.uid` and database-stored roles (if applicable, though no admin roles were explicitly modeled, the structure supports adding `/roles_admin/{uid}` for that). The use of semantic naming and explicit state modeling (e.g., `status` in Transaction) further enhances debuggability and predictability."
+  }
+}

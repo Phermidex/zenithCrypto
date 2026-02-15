@@ -1,0 +1,193 @@
+/**
+ * This ruleset enforces a strict user-ownership security model for a cryptocurrency wallet application.
+ *
+ * Core Philosophy:
+ * Access control is primarily based on user ownership. Authenticated users have full control
+ * over their own data, and no access to the data of other users. Publicly accessible data,
+ * such as the list of available cryptocurrencies, is stored separately and is read-only for clients.
+ *
+ * Data Structure:
+ * All private user data, including profiles, credit cards, wallets, and transactions, is
+ * hierarchically organized under the `/users/{userId}` path, where `{userId}` corresponds
+ * to the user's authentication UID. This structure provides a natural security boundary.
+ * A top-level collection, `/cryptocurrencyTypes`, holds global, publicly readable information.
+ *
+ * Key Security Decisions:
+ * - User Enumeration is Disabled: Listing documents in the top-level `/users` collection is prohibited
+ *   to protect user privacy.
+ * - Strict Ownership: All user-specific subcollections (`creditCards`, `wallets`, `transactions`)
+ *   can only be read or written to by the authenticated user who owns the parent `/users/{userId}` document.
+ * - Public Read-Only Data: The `/cryptocurrencyTypes` collection is publicly readable by any client,
+ *   allowing the app to display market data, but all write operations are disabled to prevent tampering.
+ * - Denormalization for Authorization: User-specific documents (e.g., a credit card) contain a
+ *   denormalized `userId` field. Rules enforce that this field matches the document's path,
+ *   ensuring data integrity and enabling simple, performant authorization checks without needing
+ *   costly `get()` calls to parent documents.
+ * - Structural Segregation: Private user data (`/users/{userId}/...`) is structurally separated from
+ *   public data (`/cryptocurrencyTypes`), which simplifies rules and improves query performance and security.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the requesting user's UID matches the given userId.
+     * This is the foundation of the ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Ensures a document exists before an update or delete operation.
+     * This prevents requests from succeeding against non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Validates that a newly created UserProfile document's internal `id`
+     * field matches the document ID (`userId` from the path).
+     */
+    function newProfileHasCorrectId(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Ensures the internal `id` field of a UserProfile is immutable on update.
+     */
+    function profileIdIsImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates that a newly created subcollection document's internal `userId`
+     * field matches the `userId` from the path.
+     */
+    function newDocHasCorrectOwner(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Ensures the internal `userId` field of a subcollection document is immutable on update.
+     */
+    function ownerIsImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * Validates wallet path integrity on create.
+     */
+    function newWalletHasCorrectIds(userId, cryptocurrencyTypeId) {
+      return request.resource.data.userId == userId && request.resource.data.cryptocurrencyTypeId == cryptocurrencyTypeId;
+    }
+
+    /**
+     * Ensures wallet IDs are immutable on update.
+     */
+    function walletIdsAreImmutable() {
+      return request.resource.data.userId == resource.data.userId && request.resource.data.cryptocurrencyTypeId == resource.data.cryptocurrencyTypeId;
+    }
+
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents. Only the authenticated owner of a profile
+     *   can read, create, update, or delete it. Listing all users is forbidden.
+     * @path /users/{userId}
+     * @allow (get) An authenticated user with UID 'user123' can read their own profile at `/users/user123`.
+     * @allow (create) An authenticated user with UID 'user123' can create their own profile at `/users/user123`.
+     * @deny (get) A user with UID 'user456' cannot read the profile at `/users/user123`.
+     * @deny (list) No user can list all documents in the `/users` collection.
+     * @principle Restricts access to a user's own data tree and allows self-creation of a profile.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Prevent user enumeration
+      allow create: if isOwner(userId) && newProfileHasCorrectId(userId);
+      allow update: if isOwner(userId) && isExistingDoc() && profileIdIsImmutable();
+      allow delete: if isOwner(userId) && isExistingDoc();
+
+      /**
+       * @description Manages a user's saved credit cards. Only the owner can manage their cards.
+       * @path /users/{userId}/creditCards/{creditCardId}
+       * @allow (list) An authenticated user with UID 'user123' can list their own cards at `/users/user123/creditCards`.
+       * @allow (create) An authenticated user with UID 'user123' can add a new card to their own profile.
+       * @deny (get) A user with UID 'user456' cannot read a card at `/users/user123/creditCards/cardABC`.
+       * @principle Enforces document ownership for all operations and validates relational integrity on writes.
+       */
+      match /creditCards/{creditCardId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && newDocHasCorrectOwner(userId);
+        allow update: if isOwner(userId) && isExistingDoc() && ownerIsImmutable();
+        allow delete: if isOwner(userId) && isExistingDoc();
+      }
+
+      /**
+       * @description Manages a user's cryptocurrency wallets. Only the owner can access their wallets.
+       * @path /users/{userId}/wallets/{cryptocurrencyTypeId}
+       * @allow (get) An authenticated user with UID 'user123' can read their Bitcoin wallet at `/users/user123/wallets/bitcoin`.
+       * @allow (list) An authenticated user with UID 'user123' can list all their wallets.
+       * @deny (update) A user with UID 'user456' cannot update a wallet at `/users/user123/wallets/bitcoin`.
+       * @principle Enforces document ownership for all operations and validates relational integrity on writes.
+       */
+      match /wallets/{cryptocurrencyTypeId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && newWalletHasCorrectIds(userId, cryptocurrencyTypeId);
+        allow update: if isOwner(userId) && isExistingDoc() && walletIdsAreImmutable();
+        allow delete: if isOwner(userId) && isExistingDoc();
+      }
+
+      /**
+       * @description Manages a user's transaction history. Only the owner can view or create their transactions.
+       * @path /users/{userId}/transactions/{transactionId}
+       * @allow (list) An authenticated user with UID 'user123' can list their own transaction history.
+       * @allow (create) An authenticated user with UID 'user123' can create a new transaction record for themself.
+       * @deny (get) A user with UID 'user456' cannot read a transaction at `/users/user123/transactions/tx_ABC`.
+       * @principle Enforces document ownership for all operations and validates relational integrity on writes.
+       */
+      match /transactions/{transactionId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && newDocHasCorrectOwner(userId);
+        allow update: if isOwner(userId) && isExistingDoc() && ownerIsImmutable();
+        allow delete: if isOwner(userId) && isExistingDoc();
+      }
+    }
+
+    /**
+     * @description Defines the globally supported cryptocurrencies. This data is public for all clients
+     *   to read, but cannot be modified by them.
+     * @path /cryptocurrencyTypes/{cryptocurrencyTypeId}
+     * @allow (get) Any user, including unauthenticated ones, can read the document for 'bitcoin'.
+     * @allow (list) Any user, including unauthenticated ones, can list all available cryptocurrencies.
+     * @deny (create) No client-side user can create a new cryptocurrency type.
+     * @deny (update) No client-side user can update an existing cryptocurrency type.
+     * @principle Provides public read access for global/catalogue data while strictly prohibiting all client writes.
+     */
+    match /cryptocurrencyTypes/{cryptocurrencyTypeId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false; // Write access should be managed by backend admins/functions
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
