@@ -67,10 +67,16 @@ export default function SignupPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Sign up failed:', error);
+      let description = 'An unknown error occurred.';
+      if (error.code === 'auth/email-already-in-use') {
+        description = 'This email address is already in use. Please try to log in.';
+      } else {
+        description = error.message;
+      }
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: error.message || 'An unknown error occurred.',
+        description: description,
       });
     } finally {
       setIsSubmitting(false);
@@ -125,7 +131,7 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" />
+                      <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
