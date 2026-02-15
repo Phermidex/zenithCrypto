@@ -13,11 +13,3 @@ export type MarketData = {
   marketCap: number;
   sparkline: number[];
 };
-
-export type CreditCard = {
-  id: string;
-  last4: string;
-  expiry: string;
-  brand: 'Visa' | 'Mastercard' | 'Amex';
-  isDefault: boolean;
-};

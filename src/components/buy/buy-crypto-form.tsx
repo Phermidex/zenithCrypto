@@ -3,16 +3,19 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { cryptoAssets, creditCards } from "@/lib/data";
+import { useState, useEffect } from "react";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, doc, runTransaction, getDoc } from "firebase/firestore";
+import type { CryptocurrencyType, CreditCard as CreditCardType, Transaction, UserWallet } from "@/lib/firebase-types";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
 import { ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const buySchema = z.object({
   amount: z.coerce.number().positive({ message: "Amount must be positive." }),
@@ -24,41 +27,117 @@ export default function BuyCryptoForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const cryptoTypesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'cryptocurrencyTypes') : null), [firestore]);
+  const { data: cryptoTypes, isLoading: isLoadingCrypto } = useCollection<CryptocurrencyType>(cryptoTypesQuery);
+
+  const cardsQuery = useMemoFirebase(() => (user && firestore ? collection(firestore, 'users', user.uid, 'creditCards') : null), [user, firestore]);
+  const { data: userCards, isLoading: isLoadingCards } = useCollection<CreditCardType>(cardsQuery);
 
   const form = useForm<z.infer<typeof buySchema>>({
     resolver: zodResolver(buySchema),
     defaultValues: {
       amount: undefined,
       crypto: "",
-      card: creditCards.find(c => c.isDefault)?.id || "",
+      card: "",
     },
   });
 
+  useEffect(() => {
+    if (userCards) {
+        const defaultCard = userCards.find(c => c.isDefault);
+        if (defaultCard) {
+            form.setValue('card', defaultCard.id);
+        } else if (userCards.length > 0) {
+            form.setValue('card', userCards[0].id);
+        }
+    }
+  }, [userCards, form]);
+
   const onSubmit = async (values: z.infer<typeof buySchema>) => {
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
+    if (!user || !firestore) {
+        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to make a purchase." });
+        setIsSubmitting(false);
+        return;
+    }
 
-    // Example error handling:
-    // const success = Math.random() > 0.2;
-    // if (!success) {
-    //   toast({
-    //     variant: "destructive",
-    //     title: "Purchase Failed",
-    //     description: "There was a problem with your purchase. Please try again.",
-    //   })
-    //   return;
-    // }
+    const { amount, crypto: cryptoId, card: cardId } = values;
+    const selectedCrypto = cryptoTypes?.find(c => c.id === cryptoId);
+    
+    if (!selectedCrypto) {
+        toast({ variant: "destructive", title: "Invalid Cryptocurrency", description: "Please select a valid crypto asset." });
+        setIsSubmitting(false);
+        return;
+    }
+    
+    // This is a simplified mock price. In a real app, you'd fetch this from an API.
+    const price = (selectedCrypto.symbol === 'BTC' ? 60000 : selectedCrypto.symbol === 'ETH' ? 3000 : 150) + (Math.random() - 0.5) * 500;
+    const cryptoAmount = amount / price;
 
-    setIsSuccess(true);
-     toast({
-        title: "Purchase Successful",
-        description: `Your purchase of ${form.getValues('crypto').toUpperCase()} was successful.`,
-     })
+    const walletRef = doc(firestore, 'users', user.uid, 'wallets', cryptoId);
+    const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
+
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const walletDoc = await transaction.get(walletRef);
+            
+            let newBalance = cryptoAmount;
+            if (walletDoc.exists()) {
+                newBalance += walletDoc.data().balance;
+            }
+
+            const walletData: Partial<UserWallet> = {
+                balance: newBalance,
+                userId: user.uid,
+                cryptocurrencyTypeId: cryptoId,
+                updatedAt: new Date().toISOString(),
+            };
+
+            if (!walletDoc.exists()) {
+                walletData.createdAt = new Date().toISOString();
+                walletData.id = walletRef.id;
+            }
+
+            transaction.set(walletRef, walletData, { merge: true });
+
+            const transactionData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> = {
+                userId: user.uid,
+                cryptocurrencyTypeId: cryptoId,
+                creditCardId: cardId,
+                type: 'buy',
+                cryptoAmount: cryptoAmount,
+                fiatAmount: amount,
+                fiatCurrency: 'USD',
+                status: 'completed',
+                transactionDate: new Date().toISOString(),
+            };
+
+            transaction.set(transactionRef, transactionData);
+        });
+
+        setIsSubmitting(false);
+        setIsSuccess(true);
+        toast({
+            title: "Purchase Successful",
+            description: `Your purchase of ${selectedCrypto.symbol} was successful.`,
+        });
+
+    } catch (e: any) {
+        console.error("Transaction failed: ", e);
+        setIsSubmitting(false);
+        toast({
+            variant: "destructive",
+            title: "Purchase Failed",
+            description: e.message || "There was a problem with your purchase. Please try again.",
+        });
+    }
   };
   
   const resetForm = () => {
-    form.reset({ amount: undefined, crypto: '', card: creditCards.find(c => c.isDefault)?.id || ''});
+    form.reset({ amount: undefined, crypto: '', card: userCards?.find(c => c.isDefault)?.id || userCards?.[0]?.id || ''});
     setIsSuccess(false);
   }
 
@@ -87,6 +166,13 @@ export default function BuyCryptoForm() {
         <CardTitle>Purchase Cryptocurrency</CardTitle>
         <CardDescription>Select crypto and amount to purchase.</CardDescription>
       </CardHeader>
+      {(isLoadingCrypto || isLoadingCards) ? (
+          <CardContent className="space-y-6">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+          </CardContent>
+      ) : (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">
@@ -96,14 +182,14 @@ export default function BuyCryptoForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cryptocurrency</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!cryptoTypes}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a crypto" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {cryptoAssets.map(asset => (
+                      {cryptoTypes?.map(asset => (
                         <SelectItem key={asset.id} value={asset.id}>
                           {asset.name} ({asset.symbol})
                         </SelectItem>
@@ -136,16 +222,16 @@ export default function BuyCryptoForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Pay with</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={!userCards}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a card" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {creditCards.map(card => (
+                      {userCards?.map(card => (
                         <SelectItem key={card.id} value={card.id}>
-                          {card.brand} ending in {card.last4}
+                          {card.brand} ending in {card.lastFourDigits}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -156,7 +242,7 @@ export default function BuyCryptoForm() {
             />
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || !user}>
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -169,6 +255,7 @@ export default function BuyCryptoForm() {
           </CardFooter>
         </form>
       </Form>
+      )}
     </Card>
   );
 }
