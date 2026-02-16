@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CircleDollarSign, CreditCard, LayoutDashboard, LogOut, Send, Zap } from "lucide-react";
+import { CircleDollarSign, CreditCard, LayoutDashboard, LogOut, Send, Zap, Clipboard } from "lucide-react";
 import {
   SidebarFooter,
   SidebarHeader,
@@ -19,6 +19,7 @@ const navItems = [
   { href: "/buy", icon: CircleDollarSign, label: "Buy Crypto" },
   { href: "/send", icon: Send, label: "Send" },
   { href: "/payment", icon: CreditCard, label: "Payment" },
+  { href: "/sample-card", icon: Clipboard, label: "Sample Card" },
 ];
 
 export default function AppSidebarContent() {
