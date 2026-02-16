@@ -70,7 +70,7 @@ service cloud.firestore {
      * Allows for partial updates that don't include the 'id' field.
      */
     function profileIdIsImmutable() {
-      return !('id' in request.resource.data) || request.resource.data.id == resource.data.id;
+      return request.resource.data.id == resource.data.id;
     }
 
     /**
@@ -86,7 +86,7 @@ service cloud.firestore {
      * Allows for partial updates that don't include the 'userId' field.
      */
     function ownerIsImmutable() {
-      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+      return request.resource.data.userId == resource.data.userId;
     }
 
     /**
@@ -101,8 +101,8 @@ service cloud.firestore {
      * Allows for partial updates that don't include 'userId' or 'cryptocurrencyTypeId'.
      */
     function walletIdsAreImmutable() {
-      return (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
-             (!('cryptocurrencyTypeId' in request.resource.data) || request.resource.data.cryptocurrencyTypeId == resource.data.cryptocurrencyTypeId);
+      return request.resource.data.userId == resource.data.userId &&
+             request.resource.data.cryptocurrencyTypeId == resource.data.cryptocurrencyTypeId;
     }
 
 
