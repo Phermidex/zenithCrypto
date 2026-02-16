@@ -1,4 +1,4 @@
-# Firebase Studio
+# Zenith Crypto Wallet
 
 This is a NextJS starter
 
