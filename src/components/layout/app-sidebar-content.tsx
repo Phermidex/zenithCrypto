@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CircleDollarSign, CreditCard, LayoutDashboard, LogOut, Send, Zap, Clipboard } from "lucide-react";
+import { CircleDollarSign, CreditCard, LayoutDashboard, LogOut, Send, Zap, Clipboard, User } from "lucide-react";
 import {
   SidebarFooter,
   SidebarHeader,
@@ -66,6 +66,19 @@ export default function AppSidebarContent() {
       </SidebarContent>
       <SidebarFooter className="p-4 mt-auto">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+                asChild
+                isActive={pathname === '/profile'}
+                onClick={() => setOpenMobile(false)}
+                tooltip={{ children: 'Profile', className: "bg-background text-foreground border-border" }}
+              >
+                <Link href="/profile">
+                  <User />
+                  <span>Profile</span>
+                </Link>
+              </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
