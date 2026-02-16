@@ -67,9 +67,10 @@ service cloud.firestore {
 
     /**
      * Ensures the internal `id` field of a UserProfile is immutable on update.
+     * Allows for partial updates that don't include the 'id' field.
      */
     function profileIdIsImmutable() {
-      return request.resource.data.id == resource.data.id;
+      return !('id' in request.resource.data) || request.resource.data.id == resource.data.id;
     }
 
     /**
@@ -82,9 +83,10 @@ service cloud.firestore {
 
     /**
      * Ensures the internal `userId` field of a subcollection document is immutable on update.
+     * Allows for partial updates that don't include the 'userId' field.
      */
     function ownerIsImmutable() {
-      return request.resource.data.userId == resource.data.userId;
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
     }
 
     /**
@@ -96,9 +98,11 @@ service cloud.firestore {
 
     /**
      * Ensures wallet IDs are immutable on update.
+     * Allows for partial updates that don't include 'userId' or 'cryptocurrencyTypeId'.
      */
     function walletIdsAreImmutable() {
-      return request.resource.data.userId == resource.data.userId && request.resource.data.cryptocurrencyTypeId == resource.data.cryptocurrencyTypeId;
+      return (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
+             (!('cryptocurrencyTypeId' in request.resource.data) || request.resource.data.cryptocurrencyTypeId == resource.data.cryptocurrencyTypeId);
     }
 
 
