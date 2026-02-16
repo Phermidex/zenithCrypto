@@ -18,8 +18,8 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/buy", icon: CircleDollarSign, label: "Buy Crypto" },
   { href: "/send", icon: Send, label: "Send" },
+  { href: "/transactions", icon: Clipboard, label: "Transactions" },
   { href: "/payment", icon: CreditCard, label: "Payment" },
-  { href: "/sample-card", icon: Clipboard, label: "Sample Card" },
 ];
 
 export default function AppSidebarContent() {
