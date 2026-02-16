@@ -5,8 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc, runTransaction, getDoc } from "firebase/firestore";
+import { collection, doc, runTransaction } from "firebase/firestore";
 import type { CryptocurrencyType, CreditCard as CreditCardType, Transaction, UserWallet } from "@/lib/firebase-types";
+import { cryptoAssets } from '@/lib/data';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,8 +31,8 @@ export default function BuyCryptoForm() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const cryptoTypesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'cryptocurrencyTypes') : null), [firestore]);
-  const { data: cryptoTypes, isLoading: isLoadingCrypto } = useCollection<CryptocurrencyType>(cryptoTypesQuery);
+  const cryptoTypes = cryptoAssets;
+  const isLoadingCrypto = false;
 
   const cardsQuery = useMemoFirebase(() => (user && firestore ? collection(firestore, 'users', user.uid, 'creditCards') : null), [user, firestore]);
   const { data: userCards, isLoading: isLoadingCards } = useCollection<CreditCardType>(cardsQuery);

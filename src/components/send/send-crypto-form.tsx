@@ -3,10 +3,11 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, doc, runTransaction, getDoc } from "firebase/firestore";
+import { collection, doc, runTransaction } from "firebase/firestore";
 import type { CryptocurrencyType, Transaction, UserWallet } from "@/lib/firebase-types";
+import { cryptoAssets } from '@/lib/data';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,8 +31,8 @@ export default function SendCryptoForm() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const cryptoTypesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'cryptocurrencyTypes') : null), [firestore]);
-  const { data: cryptoTypes, isLoading: isLoadingCrypto } = useCollection<CryptocurrencyType>(cryptoTypesQuery);
+  const cryptoTypes = cryptoAssets;
+  const isLoadingCrypto = false;
 
   const userWalletsQuery = useMemoFirebase(
     () => (user && firestore ? collection(firestore, 'users', user.uid, 'wallets') : null),
@@ -48,9 +49,9 @@ export default function SendCryptoForm() {
     },
   });
 
-  const { walletOptions, cryptoDetailsMap } = useMemo(() => {
+  const { walletOptions } = useMemo(() => {
     if (!userWallets || !cryptoTypes) {
-      return { walletOptions: [], cryptoDetailsMap: new Map() };
+      return { walletOptions: [] };
     }
     const cryptoMap = new Map(cryptoTypes.map(ct => [ct.id, ct]));
     const options = userWallets
@@ -59,10 +60,8 @@ export default function SendCryptoForm() {
         return details ? { ...wallet, details } : null;
       })
       .filter(Boolean);
-      
-    const detailsMap = new Map(options.map(opt => [opt!.id, opt!]));
 
-    return { walletOptions: options, cryptoDetailsMap: detailsMap };
+    return { walletOptions: options };
   }, [userWallets, cryptoTypes]);
 
   const selectedCryptoId = form.watch('crypto');
@@ -248,5 +247,3 @@ export default function SendCryptoForm() {
     </Card>
   );
 }
-
-    

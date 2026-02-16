@@ -5,6 +5,7 @@ import { collection } from 'firebase/firestore';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { MarketData, WalletAsset } from '@/lib/types';
 import type { CryptocurrencyType, UserWallet } from '@/lib/firebase-types';
+import { cryptoAssets } from '@/lib/data';
 
 import AppHeader from '@/components/layout/app-header';
 import WalletBalance from '@/components/dashboard/wallet-balance';
@@ -15,11 +16,8 @@ export default function DashboardPage() {
   const { user, isUserLoading: isUserLoadingAuth } = useUser();
   const firestore = useFirestore();
 
-  const cryptoTypesQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'cryptocurrencyTypes') : null),
-    [firestore]
-  );
-  const { data: cryptoTypes, isLoading: isCryptoTypesLoading } = useCollection<CryptocurrencyType>(cryptoTypesQuery);
+  const cryptoTypes = cryptoAssets;
+  const isCryptoTypesLoading = false;
 
   const userWalletsQuery = useMemoFirebase(
     () => (firestore && user ? collection(firestore, 'users', user.uid, 'wallets') : null),
