@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect } from "react";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { doc } from "firebase/firestore";
 import type { UserProfile } from "@/lib/firebase-types";
 
@@ -69,13 +69,23 @@ export default function ProfileForm() {
     }
 
     const userProfileRef = doc(firestore, 'users', user.uid);
-    const profileUpdateData = {
+    
+    const isCreating = !userProfile;
+
+    const profileData: Partial<UserProfile> = {
         firstName: values.firstName,
         lastName: values.lastName,
         updatedAt: new Date().toISOString(),
     };
 
-    updateDocumentNonBlocking(userProfileRef, profileUpdateData);
+    if (isCreating) {
+        profileData.id = user.uid;
+        profileData.email = user.email!;
+        profileData.createdAt = new Date().toISOString();
+    }
+
+    // Use set with merge:true to create or update the document.
+    setDocumentNonBlocking(userProfileRef, profileData, { merge: true });
     
     setIsSubmitting(false);
     toast({
