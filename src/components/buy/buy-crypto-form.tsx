@@ -40,7 +40,7 @@ export default function BuyCryptoForm() {
   const form = useForm<z.infer<typeof buySchema>>({
     resolver: zodResolver(buySchema),
     defaultValues: {
-      amount: undefined,
+      amount: "",
       crypto: "",
       card: "",
     },
@@ -138,7 +138,7 @@ export default function BuyCryptoForm() {
   };
   
   const resetForm = () => {
-    form.reset({ amount: undefined, crypto: '', card: userCards?.find(c => c.isDefault)?.id || userCards?.[0]?.id || ''});
+    form.reset({ amount: "", crypto: '', card: userCards?.find(c => c.isDefault)?.id || userCards?.[0]?.id || ''});
     setIsSuccess(false);
   }
 

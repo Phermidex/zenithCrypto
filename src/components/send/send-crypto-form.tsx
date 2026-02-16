@@ -43,7 +43,7 @@ export default function SendCryptoForm() {
   const form = useForm<z.infer<typeof sendSchema>>({
     resolver: zodResolver(sendSchema),
     defaultValues: {
-      amount: undefined,
+      amount: "",
       crypto: "",
       recipientEmail: "",
     },
